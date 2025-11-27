@@ -35,47 +35,77 @@ export const StoresMap: React.FC<StoresMapProps> = ({ isOpen, onClose }) => {
     const doInit = async () => {
       try {
         if (typeof window === 'undefined') return false;
-        const ymaps3 = (window as any).ymaps3;
-        if (!ymaps3) return false;
+        const win: any = window;
 
-        if (typeof ymaps3.ready === 'function') {
-          await ymaps3.ready();
+        // Try ymaps3 (v3)
+        if (win.ymaps3) {
+          const ym3 = win.ymaps3;
+          if (typeof ym3.ready === 'function') await ym3.ready();
+
+          const { YMap, YMapDefaultSchemeLayer, YMapMarker } = ym3;
+
+          // Вычисляем центр всех магазинов (coords = [lon, lat])
+          const centerLat = STORES.reduce((sum, store) => sum + store.coords[1], 0) / STORES.length;
+          const centerLon = STORES.reduce((sum, store) => sum + store.coords[0], 0) / STORES.length;
+
+          cleanupMap();
+
+          mapRef.current = new YMap(
+            mapContainerRef.current!,
+            {
+              location: {
+                center: [centerLon, centerLat],
+                zoom: 10
+              }
+            }
+          );
+
+          mapRef.current.addChild(new YMapDefaultSchemeLayer());
+
+          STORES.forEach((store) => {
+            const marker = new YMapMarker({
+              coordinates: store.coords,
+              properties: {
+                balloonContent: `${store.name}<br/>${store.address}`
+              }
+            });
+            mapRef.current.addChild(marker);
+          });
+
+          initAttemptsRef.current = 0;
+          setInitFailed(false);
+          return true;
         }
 
-        const { YMap, YMapDefaultSchemeLayer, YMapMarker } = ymaps3;
+        // Try ymaps (v2)
+        if (win.ymaps) {
+          const ym = win.ymaps;
+          if (typeof ym.ready === 'function') await ym.ready();
 
-        // Вычисляем центр всех магазинов (coords = [lon, lat])
-        const centerLat = STORES.reduce((sum, store) => sum + store.coords[1], 0) / STORES.length;
-        const centerLon = STORES.reduce((sum, store) => sum + store.coords[0], 0) / STORES.length;
+          // center expects [lat, lon] in v2
+          const centerLat = STORES.reduce((sum, store) => sum + store.coords[1], 0) / STORES.length;
+          const centerLon = STORES.reduce((sum, store) => sum + store.coords[0], 0) / STORES.length;
 
-        cleanupMap();
+          cleanupMap();
 
-        mapRef.current = new YMap(
-          mapContainerRef.current!,
-          {
-            location: {
-              center: [centerLon, centerLat],
-              zoom: 10
-            }
-          }
-        );
-
-        mapRef.current.addChild(new YMapDefaultSchemeLayer());
-
-        STORES.forEach((store) => {
-          const marker = new YMapMarker({
-            coordinates: store.coords,
-            properties: {
-              balloonContent: `${store.name}<br/>${store.address}`
-            }
+          mapRef.current = new ym.Map(mapContainerRef.current!, {
+            center: [centerLat, centerLon],
+            zoom: 10,
           });
-          mapRef.current.addChild(marker);
-        });
 
-        // успешная инициализация — сброс состояния ошибок
-        initAttemptsRef.current = 0;
-        setInitFailed(false);
-        return true;
+          STORES.forEach((store) => {
+            const placemark = new ym.Placemark([store.coords[1], store.coords[0]], {
+              balloonContent: `${store.name}<br/>${store.address}`
+            });
+            mapRef.current.geoObjects.add(placemark);
+          });
+
+          initAttemptsRef.current = 0;
+          setInitFailed(false);
+          return true;
+        }
+
+        return false;
       } catch (error) {
         console.error('Ошибка инициализации карты:', error);
         return false;
@@ -86,7 +116,7 @@ export const StoresMap: React.FC<StoresMapProps> = ({ isOpen, onClose }) => {
       // Попытка инициализации сразу
       if (await doInit()) return;
 
-      // Если ymaps3 ещё не загружен, следим за загрузкой скрипта
+      // Если скрипт Яндекс.Карт есть — подпишемся на load, иначе попробуем добавить v2.1 (по запросу пользователя)
       const script = document.querySelector('script[src*="api-maps.yandex.ru"]') as HTMLScriptElement | null;
       if (script) {
         const onLoad = async () => {
@@ -96,6 +126,22 @@ export const StoresMap: React.FC<StoresMapProps> = ({ isOpen, onClose }) => {
           }
         };
         script.addEventListener('load', onLoad);
+      } else {
+        try {
+          const v2Url = 'https://api-maps.yandex.ru/2.1/?lang=ru_RU&apikey=e6e1c152-f129-4c96-9349-1f0738732fee';
+          const s = document.createElement('script');
+          s.src = v2Url;
+          s.async = true;
+          document.head.appendChild(s);
+          s.addEventListener('load', async () => {
+            if (await doInit() && intervalId) {
+              window.clearInterval(intervalId);
+              intervalId = null;
+            }
+          });
+        } catch (e) {
+          // ignore
+        }
       }
 
       // Polling на случай, если скрипт добавлен динамически
