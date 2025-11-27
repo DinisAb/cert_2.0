@@ -17,17 +17,25 @@ export const StoresMap: React.FC<StoresMapProps> = ({ isOpen, onClose }) => {
   useEffect(() => {
     if (!isOpen || !mapContainerRef.current) return;
 
-    const initMap = async () => {
-      try {
-        if (typeof window === 'undefined') return;
+    let intervalId: number | null = null;
 
-        const ymaps3 = (window as any).ymaps3;
-        if (!ymaps3) {
-          console.warn('ymaps3 не загружен (еще).');
-          return;
+    const cleanupMap = () => {
+      if (mapRef.current) {
+        try {
+          mapRef.current.destroy();
+        } catch (e) {
+          // ignore
         }
+        mapRef.current = null;
+      }
+    };
 
-        // Вызов ready как функции — возвращает промис
+    const doInit = async () => {
+      try {
+        if (typeof window === 'undefined') return false;
+        const ymaps3 = (window as any).ymaps3;
+        if (!ymaps3) return false;
+
         if (typeof ymaps3.ready === 'function') {
           await ymaps3.ready();
         }
@@ -37,6 +45,8 @@ export const StoresMap: React.FC<StoresMapProps> = ({ isOpen, onClose }) => {
         // Вычисляем центр всех магазинов (coords = [lon, lat])
         const centerLat = STORES.reduce((sum, store) => sum + store.coords[1], 0) / STORES.length;
         const centerLon = STORES.reduce((sum, store) => sum + store.coords[0], 0) / STORES.length;
+
+        cleanupMap();
 
         mapRef.current = new YMap(
           mapContainerRef.current!,
@@ -50,7 +60,6 @@ export const StoresMap: React.FC<StoresMapProps> = ({ isOpen, onClose }) => {
 
         mapRef.current.addChild(new YMapDefaultSchemeLayer());
 
-        // Добавляем маркеры для всех магазинов
         STORES.forEach((store) => {
           const marker = new YMapMarker({
             coordinates: store.coords,
@@ -60,18 +69,49 @@ export const StoresMap: React.FC<StoresMapProps> = ({ isOpen, onClose }) => {
           });
           mapRef.current.addChild(marker);
         });
+
+        return true;
       } catch (error) {
         console.error('Ошибка инициализации карты:', error);
+        return false;
       }
     };
 
-    initMap();
+    const startInit = async () => {
+      // Попытка инициализации сразу
+      if (await doInit()) return;
+
+      // Если ymaps3 ещё не загружен, следим за загрузкой скрипта
+      const script = document.querySelector('script[src*="api-maps.yandex.ru"]') as HTMLScriptElement | null;
+      if (script) {
+        const onLoad = async () => {
+          if (await doInit() && intervalId) {
+            window.clearInterval(intervalId);
+            intervalId = null;
+          }
+        };
+        script.addEventListener('load', onLoad);
+      }
+
+      // Polling на случай, если скрипт добавлен динамически
+      intervalId = window.setInterval(async () => {
+        if (await doInit()) {
+          if (intervalId) {
+            window.clearInterval(intervalId);
+            intervalId = null;
+          }
+        }
+      }, 300);
+    };
+
+    startInit();
 
     return () => {
-      if (mapRef.current) {
-        mapRef.current.destroy();
-        mapRef.current = null;
+      if (intervalId) {
+        window.clearInterval(intervalId);
+        intervalId = null;
       }
+      cleanupMap();
     };
   }, [isOpen]);
 
