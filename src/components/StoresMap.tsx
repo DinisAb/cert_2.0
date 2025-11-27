@@ -19,37 +19,47 @@ export const StoresMap: React.FC<StoresMapProps> = ({ isOpen, onClose }) => {
 
     const initMap = async () => {
       try {
-        if (typeof window !== 'undefined' && window.ymaps3) {
-          await window.ymaps3.ready;
-          const { YMap, YMapDefaultSchemeLayer, YMapMarker } = window.ymaps3;
+        if (typeof window === 'undefined') return;
 
-          // Вычисляем центр всех магазинов
-          const centerLat = STORES.reduce((sum, store) => sum + store.coords[1], 0) / STORES.length;
-          const centerLon = STORES.reduce((sum, store) => sum + store.coords[0], 0) / STORES.length;
-
-          mapRef.current = new YMap(
-            mapContainerRef.current!,
-            {
-              location: {
-                center: [centerLon, centerLat],
-                zoom: 10
-              }
-            }
-          );
-
-          mapRef.current.addChild(new YMapDefaultSchemeLayer());
-
-          // Добавляем маркеры для всех магазинов
-          STORES.forEach((store) => {
-            const marker = new YMapMarker({
-              coordinates: store.coords,
-              properties: {
-                balloonContent: `${store.name}<br/>${store.address}`
-              }
-            });
-            mapRef.current.addChild(marker);
-          });
+        const ymaps3 = (window as any).ymaps3;
+        if (!ymaps3) {
+          console.warn('ymaps3 не загружен (еще).');
+          return;
         }
+
+        // Вызов ready как функции — возвращает промис
+        if (typeof ymaps3.ready === 'function') {
+          await ymaps3.ready();
+        }
+
+        const { YMap, YMapDefaultSchemeLayer, YMapMarker } = ymaps3;
+
+        // Вычисляем центр всех магазинов (coords = [lon, lat])
+        const centerLat = STORES.reduce((sum, store) => sum + store.coords[1], 0) / STORES.length;
+        const centerLon = STORES.reduce((sum, store) => sum + store.coords[0], 0) / STORES.length;
+
+        mapRef.current = new YMap(
+          mapContainerRef.current!,
+          {
+            location: {
+              center: [centerLon, centerLat],
+              zoom: 10
+            }
+          }
+        );
+
+        mapRef.current.addChild(new YMapDefaultSchemeLayer());
+
+        // Добавляем маркеры для всех магазинов
+        STORES.forEach((store) => {
+          const marker = new YMapMarker({
+            coordinates: store.coords,
+            properties: {
+              balloonContent: `${store.name}<br/>${store.address}`
+            }
+          });
+          mapRef.current.addChild(marker);
+        });
       } catch (error) {
         console.error('Ошибка инициализации карты:', error);
       }
@@ -90,7 +100,7 @@ export const StoresMap: React.FC<StoresMapProps> = ({ isOpen, onClose }) => {
         </div>
 
         <div className="flex-1 overflow-hidden">
-          <div ref={mapContainerRef} style={{ width: '100%', height: '100%' }} />
+          <div ref={mapContainerRef} className="w-full h-full min-h-[360px]" />
         </div>
 
         <div className="p-6 border-t border-gray-100">
