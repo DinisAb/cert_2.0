@@ -1,7 +1,5 @@
 interface Step3CheckoutProps {
   nominal: number | null;
-  recipientEmail: string;
-  onEmailChange: (value: string) => void;
   recipientPhone: string;
   onPhoneChange: (value: string) => void;
   senderName: string;
@@ -12,8 +10,6 @@ interface Step3CheckoutProps {
 
 export const Step3Checkout: React.FC<Step3CheckoutProps> = ({
   nominal,
-  recipientEmail,
-  onEmailChange,
   recipientPhone,
   onPhoneChange,
   senderName,
@@ -28,17 +24,7 @@ export const Step3Checkout: React.FC<Step3CheckoutProps> = ({
 
       <div className="space-y-4 mb-6">
         <div>
-          <label className="text-xs text-gray-500 mb-1 block">Email получателя</label>
-          <input
-            type="email"
-            placeholder="email@example.com"
-            value={recipientEmail}
-            onChange={e => onEmailChange(e.target.value)}
-            className="w-full border border-gray-200 rounded-xl p-4 text-sm"
-          />
-        </div>
-        <div>
-          <label className="text-xs text-gray-500 mb-1 block">Или номер телефона</label>
+          <label className="text-xs text-gray-500 mb-1 block">Номер телефона получателя</label>
           <input
             type="tel"
             placeholder="+7 (999) 999-99-99"

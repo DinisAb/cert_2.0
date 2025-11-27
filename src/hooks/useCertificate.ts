@@ -7,10 +7,10 @@ export const useCertificate = () => {
     nominal: null,
     background: null,
     caption: null,
-    recipientEmail: '',
     recipientPhone: '',
     senderName: '',
-    message: ''
+    message: '',
+    isPhysicalCard: false
   });
 
   const updateCertificate = (updates: Partial<Certificate>) => {
@@ -18,7 +18,7 @@ export const useCertificate = () => {
   };
 
   const nextStep = () => {
-    if (step < 3) {
+    if (step < 4) {
       setStep((step + 1) as Step);
     }
   };
@@ -35,10 +35,10 @@ export const useCertificate = () => {
       nominal: null,
       background: null,
       caption: null,
-      recipientEmail: '',
       recipientPhone: '',
       senderName: '',
-      message: ''
+      message: '',
+      isPhysicalCard: false
     });
   };
 

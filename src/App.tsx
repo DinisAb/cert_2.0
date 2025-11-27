@@ -8,6 +8,7 @@ import './styles/index.css';
 
 function App() {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [certificateType, setCertificateType] = useState<'electronic' | 'physical' | null>(null);
   const {
     step,
     certificate,
@@ -17,17 +18,26 @@ function App() {
     reset
   } = useCertificate();
 
-  const handleOpenModal = () => {
+  const handleOpenElectronic = () => {
+    setCertificateType('electronic');
+    updateCertificate({ isPhysicalCard: false });
+    setIsModalOpen(true);
+  };
+
+  const handleOpenPhysical = () => {
+    setCertificateType('physical');
+    updateCertificate({ isPhysicalCard: true });
     setIsModalOpen(true);
   };
 
   const handleCloseModal = () => {
     setIsModalOpen(false);
+    setCertificateType(null);
   };
 
   return (
     <div className="bg-white text-black">
-      <Hero onOpenModal={handleOpenModal} />
+      <Hero onOpenElectronic={handleOpenElectronic} onOpenPhysical={handleOpenPhysical} />
       <FAQ />
       <Footer />
       <Modal
@@ -39,6 +49,7 @@ function App() {
         onNextStep={nextStep}
         onPrevStep={prevStep}
         onReset={reset}
+        certificateType={certificateType}
       />
     </div>
   );

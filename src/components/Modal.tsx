@@ -3,6 +3,7 @@ import { Step1Nominal } from './Step1Nominal';
 import { Step2Design } from './Step2Design';
 import { Step3Checkout } from './Step3Checkout';
 import { StepIndicator } from './StepIndicator';
+import { StoresMap } from './StoresMap';
 import { Certificate, Step } from '../types';
 
 interface ModalProps {
@@ -14,6 +15,7 @@ interface ModalProps {
   onNextStep: () => void;
   onPrevStep: () => void;
   onReset: () => void;
+  certificateType: 'electronic' | 'physical' | null;
 }
 
 export const Modal: React.FC<ModalProps> = ({
@@ -24,7 +26,8 @@ export const Modal: React.FC<ModalProps> = ({
   currentStep,
   onNextStep,
   onPrevStep,
-  onReset
+  onReset,
+  certificateType
 }) => {
   const [customAmountOpen, setCustomAmountOpen] = useState(false);
   const [customAmount, setCustomAmount] = useState<number | null>(null);
@@ -61,33 +64,38 @@ export const Modal: React.FC<ModalProps> = ({
   };
 
   const handleNextStep = () => {
-    if (currentStep < 3) {
+    const maxStep = certificate.isPhysicalCard ? 2 : 3;
+    if (currentStep < maxStep) {
       onNextStep();
     } else {
       alert(
-        `Спасибо за заказ! Сертификат на сумму ${certificate.nominal?.toLocaleString('ru-RU')} ₽ будет отправлен получателю.`
+        `Спасибо за заказ! Карта на сумму ${certificate.nominal?.toLocaleString('ru-RU')} ₽ готова к покупке.`
       );
       handleClose();
     }
   };
 
-  // Update next button state
   useEffect(() => {
     let isDisabled = true;
 
     if (currentStep === 1) {
       isDisabled = !certificate.nominal;
     } else if (currentStep === 2) {
-      isDisabled = !certificate.background || !certificate.caption;
+      if (certificate.isPhysicalCard) {
+        isDisabled = !certificate.senderName;
+      } else {
+        isDisabled = !certificate.background || !certificate.caption;
+      }
     } else if (currentStep === 3) {
-      const hasContact = certificate.recipientEmail || certificate.recipientPhone;
-      isDisabled = !hasContact || !certificate.senderName;
+      isDisabled = !certificate.recipientPhone || !certificate.senderName;
     }
 
     setIsNextDisabled(isDisabled);
   }, [currentStep, certificate]);
 
   if (!isOpen) return null;
+
+  const totalSteps = certificate.isPhysicalCard ? 2 : 3;
 
   return (
     <div className="fixed inset-0 z-50">
@@ -97,7 +105,7 @@ export const Modal: React.FC<ModalProps> = ({
           {/* Modal Header */}
           <div className="flex items-center justify-between p-6 border-b border-gray-100">
             <div className="flex items-center gap-4">
-              <StepIndicator currentStep={currentStep} />
+              <StepIndicator currentStep={currentStep} totalSteps={totalSteps} />
             </div>
             <button
               onClick={handleClose}
@@ -129,7 +137,7 @@ export const Modal: React.FC<ModalProps> = ({
               />
             )}
 
-            {currentStep === 2 && (
+            {currentStep === 2 && !certificate.isPhysicalCard && (
               <Step2Design
                 selectedBackground={certificate.background}
                 onSelectBackground={bg => onUpdateCertificate({ background: bg })}
@@ -145,11 +153,23 @@ export const Modal: React.FC<ModalProps> = ({
               />
             )}
 
-            {currentStep === 3 && (
+            {currentStep === 2 && certificate.isPhysicalCard && (
+              <div>
+                <h3 className="text-xl font-light mb-2">Ваше имя</h3>
+                <p className="text-sm text-gray-500 mb-6">Как вас зовут?</p>
+                <input
+                  type="text"
+                  placeholder="Введите ваше имя"
+                  value={certificate.senderName}
+                  onChange={e => onUpdateCertificate({ senderName: e.target.value })}
+                  className="w-full border border-gray-200 rounded-xl p-4 text-sm mb-4"
+                />
+              </div>
+            )}
+
+            {currentStep === 3 && !certificate.isPhysicalCard && (
               <Step3Checkout
                 nominal={certificate.nominal}
-                recipientEmail={certificate.recipientEmail}
-                onEmailChange={email => onUpdateCertificate({ recipientEmail: email })}
                 recipientPhone={certificate.recipientPhone}
                 onPhoneChange={phone => onUpdateCertificate({ recipientPhone: phone })}
                 senderName={certificate.senderName}
@@ -157,6 +177,12 @@ export const Modal: React.FC<ModalProps> = ({
                 message={certificate.message}
                 onMessageChange={msg => onUpdateCertificate({ message: msg })}
               />
+            )}
+
+            {currentStep === 2 && certificate.isPhysicalCard && !certificate.senderName && (
+              <div className="text-center py-8">
+                <p className="text-gray-500">Пожалуйста, введите ваше имя для продолжения</p>
+              </div>
             )}
           </div>
 
@@ -172,11 +198,11 @@ export const Modal: React.FC<ModalProps> = ({
                 </button>
               )}
               <button
-                className="flex-1 bg-[#C4785A] text-white py-4 rounded-xl text-sm hover:bg-[#B06A4E] transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                className="flex-1 bg-black text-white py-4 rounded-xl text-sm hover:bg-gray-800 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
                 onClick={handleNextStep}
                 disabled={isNextDisabled}
               >
-                {currentStep === 3 ? 'Оплатить' : 'Далее'}
+                {currentStep === totalSteps ? 'Завершить' : 'Далее'}
               </button>
             </div>
           </div>

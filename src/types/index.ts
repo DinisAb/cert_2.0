@@ -2,13 +2,25 @@ export type Certificate = {
   nominal: number | null;
   background: string | null;
   caption: string | null;
-  recipientEmail: string;
   recipientPhone: string;
   senderName: string;
   message: string;
+  isPhysicalCard: boolean;
 };
 
-export type Step = 1 | 2 | 3;
+export type Step = 1 | 2 | 3 | 4;
+
+export const STORES = [
+  { id: 1, name: 'Веткина', address: 'г. Москва, ул. Веткина, д. 2А, стр. 2', coords: [37.5958, 55.7523] },
+  { id: 2, name: 'Вильгельма Пика', address: 'г. Москва, ул. Вильгельма Пика, д. 11', coords: [37.5398, 55.7454] },
+  { id: 3, name: 'Тверская застава', address: 'г. Москва, площадь Тверская застава, д. 4', coords: [37.5973, 55.7687] },
+  { id: 4, name: 'Вавилова', address: 'г. Москва, ул. Вавилова, д. 3', coords: [37.5830, 55.7389] },
+  { id: 5, name: 'Киевского вокзала', address: 'г. Москва, площадь Киевского вокзала, д. 2', coords: [37.5734, 55.7453] },
+  { id: 6, name: 'Щёлковское шоссе', address: 'Москва, Щёлковское ш., д. 75', coords: [37.7612, 55.8111] },
+  { id: 7, name: 'Киевское шоссе', address: 'Москва, поселение Московский, Киевское шоссе, 23-й км, д. 1', coords: [37.4467, 55.6217] },
+  { id: 8, name: 'Пресненская наб.', address: 'г. Москва, Пресненская наб., д. 2', coords: [37.5398, 55.7647] },
+  { id: 9, name: 'Котельники', address: 'Московская область, г. Котельники, 1-й Покровский проезд, д. 5', coords: [37.7986, 55.6404] }
+];
 
 export const BACKGROUND_IMAGES = {
   'bg1': 'https://cdn.tvuvi.ru/Admin-banners/830f2a5b-8e31-11f0-8203-8e816c8c8642.webp',

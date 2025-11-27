@@ -1,8 +1,9 @@
 interface StepIndicatorProps {
   currentStep: number;
+  totalSteps?: number;
 }
 
-export const StepIndicator: React.FC<StepIndicatorProps> = ({ currentStep }) => {
+export const StepIndicator: React.FC<StepIndicatorProps> = ({ currentStep, totalSteps = 3 }) => {
   const getIndicatorClass = (step: number) => {
     if (step < currentStep) return 'completed';
     if (step === currentStep) return 'active';
@@ -11,29 +12,21 @@ export const StepIndicator: React.FC<StepIndicatorProps> = ({ currentStep }) => 
 
   return (
     <div className="flex items-center gap-2">
-      <div
-        className={`step-indicator w-7 h-7 rounded-full border border-gray-300 flex items-center justify-center text-xs ${getIndicatorClass(
-          1
-        )}`}
-      >
-        1
-      </div>
-      <div className="w-6 h-px bg-gray-200"></div>
-      <div
-        className={`step-indicator w-7 h-7 rounded-full border border-gray-300 flex items-center justify-center text-xs ${getIndicatorClass(
-          2
-        )}`}
-      >
-        2
-      </div>
-      <div className="w-6 h-px bg-gray-200"></div>
-      <div
-        className={`step-indicator w-7 h-7 rounded-full border border-gray-300 flex items-center justify-center text-xs ${getIndicatorClass(
-          3
-        )}`}
-      >
-        3
-      </div>
+      {Array.from({ length: totalSteps }).map((_, index) => {
+        const step = index + 1;
+        return (
+          <div key={step}>
+            <div
+              className={`step-indicator w-7 h-7 rounded-full border border-gray-300 flex items-center justify-center text-xs ${getIndicatorClass(
+                step
+              )}`}
+            >
+              {step}
+            </div>
+            {index < totalSteps - 1 && <div className="w-6 h-px bg-gray-200 inline-block ml-2"></div>}
+          </div>
+        );
+      })}
     </div>
   );
 };
