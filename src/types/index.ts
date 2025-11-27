@@ -5,21 +5,27 @@ export type Certificate = {
   recipientPhone: string;
   senderName: string;
   message: string;
-  isPhysicalCard: boolean;
+  isPhysicalCard?: boolean;
 };
 
-export type Step = 1 | 2 | 3 | 4;
+export type Step = 1 | 2 | 3;
 
-export const STORES = [
-  { id: 1, name: 'Веткина', address: 'г. Москва, ул. Веткина, д. 2А, стр. 2', coords: [37.5958, 55.7523] },
-  { id: 2, name: 'Вильгельма Пика', address: 'г. Москва, ул. Вильгельма Пика, д. 11', coords: [37.5398, 55.7454] },
-  { id: 3, name: 'Тверская застава', address: 'г. Москва, площадь Тверская застава, д. 4', coords: [37.5973, 55.7687] },
-  { id: 4, name: 'Вавилова', address: 'г. Москва, ул. Вавилова, д. 3', coords: [37.5830, 55.7389] },
-  { id: 5, name: 'Киевского вокзала', address: 'г. Москва, площадь Киевского вокзала, д. 2', coords: [37.5734, 55.7453] },
-  { id: 6, name: 'Щёлковское шоссе', address: 'Москва, Щёлковское ш., д. 75', coords: [37.7612, 55.8111] },
-  { id: 7, name: 'Киевское шоссе', address: 'Москва, поселение Московский, Киевское шоссе, 23-й км, д. 1', coords: [37.4467, 55.6217] },
-  { id: 8, name: 'Пресненская наб.', address: 'г. Москва, Пресненская наб., д. 2', coords: [37.5398, 55.7647] },
-  { id: 9, name: 'Котельники', address: 'Московская область, г. Котельники, 1-й Покровский проезд, д. 5', coords: [37.7986, 55.6404] }
+export interface Store {
+  name: string;
+  address: string;
+  coords: [number, number];
+}
+
+export const STORES: Store[] = [
+  { name: 'UVI Jewelry', address: 'г. Москва, ул. Веткина, 2А, стр. 2', coords: [37.5958, 55.7523] },
+  { name: 'UVI Jewelry', address: 'г. Москва, ул. Вильгельма Пика, 11', coords: [37.6214, 55.7450] },
+  { name: 'UVI Jewelry', address: 'г. Москва, площадь Тверская застава, д. 4', coords: [37.6034, 55.7684] },
+  { name: 'UVI Jewelry', address: 'г. Москва, ул. Вавилова, д. 3', coords: [37.5871, 55.7356] },
+  { name: 'UVI Jewelry', address: 'г. Москва, площадь Киевского вокзала, д. 2', coords: [37.5759, 55.7504] },
+  { name: 'UVI Jewelry', address: 'г. Москва, Щёлковское ш., д. 75', coords: [37.6891, 55.7958] },
+  { name: 'UVI Jewelry', address: 'г. Москва, поселение Московский, Киевское шоссе 23-й км, д. 1', coords: [37.3840, 55.6343] },
+  { name: 'UVI Jewelry', address: 'г. Москва, Пресненская наб., д. 2', coords: [37.5394, 55.7527] },
+  { name: 'UVI Jewelry', address: 'Московская область, г. Котельники, 1-й Покровский проезд, д. 5', coords: [37.7638, 55.6385] }
 ];
 
 export const BACKGROUND_IMAGES = {

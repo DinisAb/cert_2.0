@@ -18,7 +18,7 @@ export const useCertificate = () => {
   };
 
   const nextStep = () => {
-    if (step < 4) {
+    if (step < 3) {
       setStep((step + 1) as Step);
     }
   };

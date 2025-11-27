@@ -12,6 +12,7 @@ declare global {
 
 export const StoresMap: React.FC<StoresMapProps> = ({ isOpen, onClose }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
+  const mapRef = useRef<any>(null);
 
   useEffect(() => {
     if (!isOpen || !mapContainerRef.current) return;
@@ -22,24 +23,31 @@ export const StoresMap: React.FC<StoresMapProps> = ({ isOpen, onClose }) => {
           await window.ymaps3.ready;
           const { YMap, YMapDefaultSchemeLayer, YMapMarker } = window.ymaps3;
 
-          const map = new YMap(
+          // Вычисляем центр всех магазинов
+          const centerLat = STORES.reduce((sum, store) => sum + store.coords[1], 0) / STORES.length;
+          const centerLon = STORES.reduce((sum, store) => sum + store.coords[0], 0) / STORES.length;
+
+          mapRef.current = new YMap(
             mapContainerRef.current!,
             {
               location: {
-                center: [37.62, 55.75],
-                zoom: 11
+                center: [centerLon, centerLat],
+                zoom: 10
               }
             }
           );
 
-          map.addChild(new YMapDefaultSchemeLayer());
+          mapRef.current.addChild(new YMapDefaultSchemeLayer());
 
-          STORES.forEach(store => {
+          // Добавляем маркеры для всех магазинов
+          STORES.forEach((store) => {
             const marker = new YMapMarker({
-              coordinates: store.coords as [number, number],
-              properties: { balloonContent: `${store.name}<br/>${store.address}` }
+              coordinates: store.coords,
+              properties: {
+                balloonContent: `${store.name}<br/>${store.address}`
+              }
             });
-            map.addChild(marker);
+            mapRef.current.addChild(marker);
           });
         }
       } catch (error) {
@@ -48,6 +56,13 @@ export const StoresMap: React.FC<StoresMapProps> = ({ isOpen, onClose }) => {
     };
 
     initMap();
+
+    return () => {
+      if (mapRef.current) {
+        mapRef.current.destroy();
+        mapRef.current = null;
+      }
+    };
   }, [isOpen]);
 
   if (!isOpen) return null;
@@ -56,7 +71,7 @@ export const StoresMap: React.FC<StoresMapProps> = ({ isOpen, onClose }) => {
     <div className="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl overflow-hidden w-full max-w-4xl h-[90vh] flex flex-col">
         <div className="flex items-center justify-between p-6 border-b border-gray-100">
-          <h2 className="text-2xl font-light">Магазины UVI</h2>
+          <h2 className="text-2xl font-light">Выберите магазин для получения карты</h2>
           <button
             onClick={onClose}
             className="w-8 h-8 flex items-center justify-center hover:bg-gray-100 rounded-full transition-colors"
@@ -81,7 +96,7 @@ export const StoresMap: React.FC<StoresMapProps> = ({ isOpen, onClose }) => {
         <div className="p-6 border-t border-gray-100">
           <button
             onClick={onClose}
-            className="w-full bg-black text-white py-3 rounded-lg hover:bg-gray-800 transition-colors"
+            className="w-full border border-gray-200 text-black py-3 rounded-lg hover:bg-gray-50 transition-colors"
           >
             Закрыть
           </button>

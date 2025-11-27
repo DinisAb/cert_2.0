@@ -32,11 +32,13 @@ export const Modal: React.FC<ModalProps> = ({
   const [customAmountOpen, setCustomAmountOpen] = useState(false);
   const [customAmount, setCustomAmount] = useState<number | null>(null);
   const [isNextDisabled, setIsNextDisabled] = useState(true);
+  const [showStoresMap, setShowStoresMap] = useState(false);
 
   const handleClose = () => {
     onReset();
     setCustomAmountOpen(false);
     setCustomAmount(null);
+    setShowStoresMap(false);
     onClose();
   };
 
@@ -66,11 +68,16 @@ export const Modal: React.FC<ModalProps> = ({
   const handleNextStep = () => {
     const maxStep = certificate.isPhysicalCard ? 2 : 3;
     if (currentStep < maxStep) {
-      onNextStep();
+      if (certificate.isPhysicalCard && currentStep === 2) {
+        setShowStoresMap(true);
+      } else {
+        onNextStep();
+      }
     } else {
-      alert(
-        `Спасибо за заказ! Карта на сумму ${certificate.nominal?.toLocaleString('ru-RU')} ₽ готова к покупке.`
-      );
+      const message = certificate.isPhysicalCard
+        ? `Карта на сумму ${certificate.nominal?.toLocaleString('ru-RU')} ₽ готова к покупке в выбранном магазине!`
+        : `Спасибо за заказ! Сертификат на сумму ${certificate.nominal?.toLocaleString('ru-RU')} ₽ будет отправлен!`;
+      alert(message);
       handleClose();
     }
   };
@@ -208,6 +215,9 @@ export const Modal: React.FC<ModalProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Stores Map for Physical Cards */}
+      <StoresMap isOpen={showStoresMap} onClose={() => setShowStoresMap(false)} />
     </div>
   );
 };
