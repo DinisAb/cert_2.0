@@ -15,7 +15,6 @@ interface ModalProps {
   onNextStep: () => void;
   onPrevStep: () => void;
   onReset: () => void;
-  certificateType: 'electronic' | 'physical' | null;
 }
 
 export const Modal: React.FC<ModalProps> = ({
@@ -26,8 +25,7 @@ export const Modal: React.FC<ModalProps> = ({
   currentStep,
   onNextStep,
   onPrevStep,
-  onReset,
-  certificateType
+  onReset
 }) => {
   const [customAmountOpen, setCustomAmountOpen] = useState(false);
   const [customAmount, setCustomAmount] = useState<number | null>(null);
