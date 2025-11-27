@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { STORES } from '../types';
 
 interface StoresMapProps {
@@ -13,6 +13,8 @@ declare global {
 export const StoresMap: React.FC<StoresMapProps> = ({ isOpen, onClose }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<any>(null);
+  const [initFailed, setInitFailed] = useState(false);
+  const initAttemptsRef = useRef(0);
 
   useEffect(() => {
     if (!isOpen || !mapContainerRef.current) return;
@@ -70,6 +72,9 @@ export const StoresMap: React.FC<StoresMapProps> = ({ isOpen, onClose }) => {
           mapRef.current.addChild(marker);
         });
 
+        // успешная инициализация — сброс состояния ошибок
+        initAttemptsRef.current = 0;
+        setInitFailed(false);
         return true;
       } catch (error) {
         console.error('Ошибка инициализации карты:', error);
@@ -95,10 +100,20 @@ export const StoresMap: React.FC<StoresMapProps> = ({ isOpen, onClose }) => {
 
       // Polling на случай, если скрипт добавлен динамически
       intervalId = window.setInterval(async () => {
+        initAttemptsRef.current += 1;
         if (await doInit()) {
           if (intervalId) {
             window.clearInterval(intervalId);
             intervalId = null;
+          }
+        } else {
+          // после N попыток считаем, что загрузка заблокирована
+          if (initAttemptsRef.current >= 30) {
+            setInitFailed(true);
+            if (intervalId) {
+              window.clearInterval(intervalId);
+              intervalId = null;
+            }
           }
         }
       }, 300);
@@ -114,6 +129,21 @@ export const StoresMap: React.FC<StoresMapProps> = ({ isOpen, onClose }) => {
       cleanupMap();
     };
   }, [isOpen]);
+
+  const handleRetry = () => {
+    initAttemptsRef.current = 0;
+    setInitFailed(false);
+    // force re-run effect by toggling isOpen? just call init via creating a custom event
+    // simplest: simulate re-opening by briefly closing and re-opening mapRef (call start logic via isOpen change handled externally)
+    // Here we just reload the script element if present to trigger load.
+    const script = document.querySelector('script[src*="api-maps.yandex.ru"]') as HTMLScriptElement | null;
+    if (script) {
+      const parent = script.parentElement;
+      const clone = script.cloneNode(true) as HTMLScriptElement;
+      script.remove();
+      if (parent) parent.appendChild(clone);
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -139,8 +169,29 @@ export const StoresMap: React.FC<StoresMapProps> = ({ isOpen, onClose }) => {
           </button>
         </div>
 
-        <div className="flex-1 overflow-hidden">
-          <div ref={mapContainerRef} className="w-full h-full min-h-[360px]" />
+        <div className="flex-1 overflow-hidden flex items-center justify-center">
+          {!initFailed ? (
+            <div ref={mapContainerRef} className="w-full h-full min-h-[360px]" />
+          ) : (
+            <div className="w-full h-full min-h-[360px] flex flex-col items-center justify-center p-6 text-center">
+              <p className="text-lg font-medium mb-3">Не удалось загрузить карту</p>
+              <p className="text-sm text-gray-500 mb-4">Проверьте блокировщики рекламы/политику сети или попробуйте повторить загрузку.</p>
+              <div className="flex gap-3">
+                <button
+                  onClick={handleRetry}
+                  className="bg-black text-white py-2 px-4 rounded-lg"
+                >
+                  Повторить
+                </button>
+                <button
+                  onClick={onClose}
+                  className="border border-gray-200 text-black py-2 px-4 rounded-lg"
+                >
+                  Закрыть
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="p-6 border-t border-gray-100">
