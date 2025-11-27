@@ -3,11 +3,13 @@ import { Hero } from './components/Hero';
 import { FAQ } from './components/FAQ';
 import { Footer } from './components/Footer';
 import { Modal } from './components/Modal';
+import { StoresMap } from './components/StoresMap';
 import { useCertificate } from './hooks/useCertificate';
 import './styles/index.css';
 
 function App() {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isStoresMapOpen, setIsStoresMapOpen] = useState(false);
   const {
     step,
     certificate,
@@ -23,8 +25,7 @@ function App() {
   };
 
   const handleOpenPhysical = () => {
-    updateCertificate({ isPhysicalCard: true });
-    setIsModalOpen(true);
+    setIsStoresMapOpen(true);
   };
 
   const handleCloseModal = () => {
@@ -46,6 +47,7 @@ function App() {
         onPrevStep={prevStep}
         onReset={reset}
       />
+      <StoresMap isOpen={isStoresMapOpen} onClose={() => setIsStoresMapOpen(false)} />
     </div>
   );
 }
